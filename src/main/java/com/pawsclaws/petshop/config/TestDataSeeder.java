@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
-//@Profile("dev")
+@Profile("dev")
 public class TestDataSeeder {
 
     private static final String PETSHOP_SLUG = "petly-demo";
