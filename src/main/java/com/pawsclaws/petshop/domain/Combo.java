@@ -17,10 +17,14 @@ import java.util.Objects;
 
 /**
  * A bundle of services sold together (Combo Completo, Dia de Spa...).
+ *
+ * <p>A partir da Opção B os combos são agendáveis como qualquer serviço:
+ * têm duração e preço por porte. O antigo "a partir de" é derivado do menor
+ * preço e a "popularidade" passou a ser contada a partir dos agendamentos.</p>
  */
 @Entity
 @Table(name = "combos")
-public class Combo {
+public class Combo implements PricedBySize {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,11 +40,17 @@ public class Combo {
     @Column(length = 500)
     private String description;
 
-    @Column(name = "price_from", precision = 10, scale = 2)
-    private BigDecimal priceFrom;
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes;
 
-    @Column(name = "popularity")
-    private Integer popularity;
+    @Column(name = "price_small", precision = 10, scale = 2)
+    private BigDecimal priceSmall;
+
+    @Column(name = "price_medium", precision = 10, scale = 2)
+    private BigDecimal priceMedium;
+
+    @Column(name = "price_large", precision = 10, scale = 2)
+    private BigDecimal priceLarge;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -84,20 +94,39 @@ public class Combo {
         this.description = description;
     }
 
-    public BigDecimal getPriceFrom() {
-        return priceFrom;
+    public Integer getDurationMinutes() {
+        return durationMinutes;
     }
 
-    public void setPriceFrom(BigDecimal priceFrom) {
-        this.priceFrom = priceFrom;
+    public void setDurationMinutes(Integer durationMinutes) {
+        this.durationMinutes = durationMinutes;
     }
 
-    public Integer getPopularity() {
-        return popularity;
+    @Override
+    public BigDecimal getPriceSmall() {
+        return priceSmall;
     }
 
-    public void setPopularity(Integer popularity) {
-        this.popularity = popularity;
+    public void setPriceSmall(BigDecimal priceSmall) {
+        this.priceSmall = priceSmall;
+    }
+
+    @Override
+    public BigDecimal getPriceMedium() {
+        return priceMedium;
+    }
+
+    public void setPriceMedium(BigDecimal priceMedium) {
+        this.priceMedium = priceMedium;
+    }
+
+    @Override
+    public BigDecimal getPriceLarge() {
+        return priceLarge;
+    }
+
+    public void setPriceLarge(BigDecimal priceLarge) {
+        this.priceLarge = priceLarge;
     }
 
     public Instant getCreatedAt() {

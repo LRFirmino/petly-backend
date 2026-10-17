@@ -40,6 +40,14 @@ public class Appointment {
     @Column(nullable = false)
     private String service;
 
+    /** Item de catálogo vinculado ({@code SERVICE} ou {@code COMBO}); nulo em itens legados. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "item_type", length = 32)
+    private CatalogItemType itemType;
+
+    @Column(name = "item_id")
+    private Long itemId;
+
     @Column(name = "scheduled_at", nullable = false)
     private LocalDateTime scheduledAt;
 
@@ -107,6 +115,22 @@ public class Appointment {
 
     public void setService(String service) {
         this.service = service;
+    }
+
+    public CatalogItemType getItemType() {
+        return itemType;
+    }
+
+    public void setItemType(CatalogItemType itemType) {
+        this.itemType = itemType;
+    }
+
+    public Long getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(Long itemId) {
+        this.itemId = itemId;
     }
 
     public LocalDateTime getScheduledAt() {

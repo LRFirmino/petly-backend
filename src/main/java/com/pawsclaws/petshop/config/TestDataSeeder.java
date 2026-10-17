@@ -284,8 +284,10 @@ public class TestDataSeeder {
         combo1.setDescription(
                 "Banho completo e tosa higiênica no mesmo atendimento."
         );
-        combo1.setPriceFrom(new BigDecimal("65.00"));
-        combo1.setPopularity(95);
+        combo1.setDurationMinutes(75);
+        combo1.setPriceSmall(new BigDecimal("55.00"));
+        combo1.setPriceMedium(new BigDecimal("70.00"));
+        combo1.setPriceLarge(new BigDecimal("90.00"));
 
         Combo combo2 = new Combo();
         combo2.setPetshop(petshop);
@@ -293,8 +295,10 @@ public class TestDataSeeder {
         combo2.setDescription(
                 "Banho, tosa completa e corte de unhas."
         );
-        combo2.setPriceFrom(new BigDecimal("110.00"));
-        combo2.setPopularity(80);
+        combo2.setDurationMinutes(120);
+        combo2.setPriceSmall(new BigDecimal("95.00"));
+        combo2.setPriceMedium(new BigDecimal("125.00"));
+        combo2.setPriceLarge(new BigDecimal("160.00"));
 
         Combo combo3 = new Combo();
         combo3.setPetshop(petshop);
@@ -302,8 +306,10 @@ public class TestDataSeeder {
         combo3.setDescription(
                 "Pacote promocional para banhos frequentes."
         );
-        combo3.setPriceFrom(new BigDecimal("40.00"));
-        combo3.setPopularity(70);
+        combo3.setDurationMinutes(60);
+        combo3.setPriceSmall(new BigDecimal("40.00"));
+        combo3.setPriceMedium(new BigDecimal("55.00"));
+        combo3.setPriceLarge(new BigDecimal("70.00"));
 
         comboRepository.saveAll(List.of(combo1, combo2, combo3));
     }

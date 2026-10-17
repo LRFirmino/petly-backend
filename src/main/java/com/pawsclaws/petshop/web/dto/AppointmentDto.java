@@ -11,6 +11,8 @@ public record AppointmentDto(
         String petName,
         String petBreed,
         String petSize,
+        String itemType,
+        Long itemId,
         String service,
         LocalDateTime scheduledAt,
         LocalDateTime endTime,

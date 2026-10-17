@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface ComboRepository extends JpaRepository<Combo, Long> {
 
-    List<Combo> findAllByPetshopIdOrderByPopularityDesc(Long petshopId);
+    List<Combo> findAllByPetshopIdOrderByNameAsc(Long petshopId);
 
     Optional<Combo> findByIdAndPetshopId(Long id, Long petshopId);
 

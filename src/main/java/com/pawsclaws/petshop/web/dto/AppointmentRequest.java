@@ -1,6 +1,5 @@
 package com.pawsclaws.petshop.web.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -13,7 +12,12 @@ public record AppointmentRequest(
 
         Long petId,
 
-        @NotBlank(message = "Informe o serviço.")
+        // SERVICE | COMBO — quando presente, o agendamento é vinculado ao item de catálogo.
+        String itemType,
+
+        Long itemId,
+
+        // Rótulo exibido. Opcional quando itemType/itemId identificam o item.
         @Size(max = 160)
         String service,
 

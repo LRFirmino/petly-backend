@@ -3,6 +3,7 @@ package com.pawsclaws.petshop;
 import com.pawsclaws.petshop.domain.Appointment;
 import com.pawsclaws.petshop.domain.AppointmentStatus;
 import com.pawsclaws.petshop.domain.AppUser;
+import com.pawsclaws.petshop.domain.CatalogItemType;
 import com.pawsclaws.petshop.domain.Client;
 import com.pawsclaws.petshop.domain.Combo;
 import com.pawsclaws.petshop.domain.Pet;
@@ -103,9 +104,9 @@ public class TestDataSeeder {
         createService(moema, "Tosa Higiênica", "Patas, barriga e região íntima", 40, 35, 45, 60);
         createService(moema, "Hidratação", "Tratamento profundo para pelagem", 30, 30, 40, 55);
 
-        createCombo(moema, "Banho Essencial", "Banho, secagem e perfume", 55, 120);
-        createCombo(moema, "Combo Completo", "Banho, tosa e unhas", 95, 90);
-        createCombo(moema, "Dia de Spa", "Hidratação e cuidados premium", 130, 60);
+        createCombo(moema, "Banho Essencial", "Banho, secagem e perfume", 60, 60, 80, 105);
+        createCombo(moema, "Combo Completo", "Banho, tosa e unhas", 90, 100, 130, 170);
+        createCombo(moema, "Dia de Spa", "Hidratação e cuidados premium", 120, 140, 175, 220);
 
         Client clara = createClient(moema, "Clara Mendes", "clara.mendes@example.com", "(11) 98845-2031");
         Client rafael = createClient(moema, "Rafael Lima", "rafael.lima@example.com", "(11) 97732-8104");
@@ -155,7 +156,7 @@ public class TestDataSeeder {
         createTeamMember(jardins, "Carla Dias", "Groomer", "Especialista em poodles", "4,9", 6);
         createService(jardins, "Banho Essencial", "Banho, secagem e perfume", 60, 50, 65, 85);
         createService(jardins, "Tosa na Tesoura", "Acabamento artesanal", 90, 70, 95, 120);
-        createCombo(jardins, "Combo Completo", "Banho, tosa e unhas", 90, 40);
+        createCombo(jardins, "Combo Completo", "Banho, tosa e unhas", 90, 95, 125, 160);
 
         Client beatriz = createClient(jardins, "Beatriz Nunes", "beatriz@example.com", "(11) 91111-2222");
         Client carlos = createClient(jardins, "Carlos Pereira", "carlos@example.com", "(11) 93333-4444");
@@ -250,13 +251,15 @@ public class TestDataSeeder {
     }
 
     private void createCombo(Petshop petshop, String name, String description,
-                             int priceFrom, int popularity) {
+                             int duration, int small, int medium, int large) {
         Combo combo = new Combo();
         combo.setPetshop(petshop);
         combo.setName(name);
         combo.setDescription(description);
-        combo.setPriceFrom(money(priceFrom));
-        combo.setPopularity(popularity);
+        combo.setDurationMinutes(duration);
+        combo.setPriceSmall(money(small));
+        combo.setPriceMedium(money(medium));
+        combo.setPriceLarge(money(large));
         comboRepository.save(combo);
     }
 
@@ -290,11 +293,38 @@ public class TestDataSeeder {
         appointment.setClient(client);
         appointment.setPet(pet);
         appointment.setService(service);
+        linkCatalogItem(appointment, petshop);
         appointment.setScheduledAt(scheduledAt);
         appointment.setStatus(status);
         appointment.setStaffName(staffName);
         appointment.setPrice(price);
         appointment.setDurationMinutes(durationMinutes);
         appointmentRepository.save(appointment);
+    }
+
+    /**
+     * Vincula o agendamento de fixture a um serviço/combo com o mesmo nome,
+     * para que a "popularidade" dos combos reflita agendamentos reais.
+     * Serviços têm prioridade (alguns nomes existem nos dois catálogos).
+     */
+    private void linkCatalogItem(Appointment appointment, Petshop petshop) {
+        String name = appointment.getService();
+        if (name == null) {
+            return;
+        }
+        for (ServiceItem service : serviceRepository.findAllByPetshopIdOrderByNameAsc(petshop.getId())) {
+            if (name.equals(service.getName())) {
+                appointment.setItemType(CatalogItemType.SERVICE);
+                appointment.setItemId(service.getId());
+                return;
+            }
+        }
+        for (Combo combo : comboRepository.findAllByPetshopIdOrderByNameAsc(petshop.getId())) {
+            if (name.equals(combo.getName())) {
+                appointment.setItemType(CatalogItemType.COMBO);
+                appointment.setItemId(combo.getId());
+                return;
+            }
+        }
     }
 }

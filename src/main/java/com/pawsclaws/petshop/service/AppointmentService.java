@@ -2,18 +2,25 @@ package com.pawsclaws.petshop.service;
 
 import com.pawsclaws.petshop.domain.Appointment;
 import com.pawsclaws.petshop.domain.AppointmentStatus;
+import com.pawsclaws.petshop.domain.CatalogItemType;
 import com.pawsclaws.petshop.domain.Client;
+import com.pawsclaws.petshop.domain.Combo;
 import com.pawsclaws.petshop.domain.Pet;
+import com.pawsclaws.petshop.domain.ServiceItem;
+import com.pawsclaws.petshop.domain.SizeTier;
 import com.pawsclaws.petshop.exception.ConflictException;
 import com.pawsclaws.petshop.exception.ResourceNotFoundException;
 import com.pawsclaws.petshop.repository.AppointmentRepository;
 import com.pawsclaws.petshop.repository.ClientRepository;
+import com.pawsclaws.petshop.repository.ComboRepository;
 import com.pawsclaws.petshop.repository.PetRepository;
+import com.pawsclaws.petshop.repository.ServiceItemRepository;
 import com.pawsclaws.petshop.web.dto.AppointmentDto;
 import com.pawsclaws.petshop.web.dto.AppointmentRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -25,15 +32,21 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final ClientRepository clientRepository;
     private final PetRepository petRepository;
+    private final ServiceItemRepository serviceRepository;
+    private final ComboRepository comboRepository;
     private final TenantService tenantService;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
                               ClientRepository clientRepository,
                               PetRepository petRepository,
+                              ServiceItemRepository serviceRepository,
+                              ComboRepository comboRepository,
                               TenantService tenantService) {
         this.appointmentRepository = appointmentRepository;
         this.clientRepository = clientRepository;
         this.petRepository = petRepository;
+        this.serviceRepository = serviceRepository;
+        this.comboRepository = comboRepository;
         this.tenantService = tenantService;
     }
 
@@ -148,13 +161,77 @@ public class AppointmentService {
 
         appointment.setClient(client);
         appointment.setPet(pet);
-        appointment.setService(request.service().trim());
         appointment.setScheduledAt(request.scheduledAt());
         appointment.setStatus(parseStatus(request.status()));
         appointment.setStaffName(request.staffName());
-        appointment.setDurationMinutes(request.durationMinutes());
-        appointment.setPrice(request.price());
         appointment.setNotes(request.notes());
+        applyCatalogItem(appointment, request, petshopId, pet);
+    }
+
+    /**
+     * Vincula o agendamento a um serviço ou combo (quando informado) e resolve
+     * duração/preço. Valores explícitos na requisição têm prioridade; caso
+     * contrário a duração vem do item e o preço do porte do pet.
+     *
+     * <p>Sem {@code itemType}/{@code itemId} mantém o comportamento legado
+     * (rótulo em texto livre) e preserva um vínculo já existente em edições.</p>
+     */
+    private void applyCatalogItem(Appointment appointment, AppointmentRequest request,
+                                  Long petshopId, Pet pet) {
+        CatalogItemType type = parseItemType(request.itemType());
+        Long itemId = request.itemId();
+
+        if (type == null && itemId == null) {
+            String label = request.service() == null ? null : request.service().trim();
+            if (label == null || label.isBlank()) {
+                throw new IllegalArgumentException("Informe o serviço.");
+            }
+            appointment.setService(label);
+            appointment.setDurationMinutes(request.durationMinutes());
+            appointment.setPrice(request.price());
+            return;
+        }
+        if (type == null || itemId == null) {
+            throw new IllegalArgumentException("Informe o tipo (SERVICE/COMBO) e o item de catálogo.");
+        }
+
+        String name;
+        Integer itemDuration;
+        BigDecimal itemPrice;
+        if (type == CatalogItemType.SERVICE) {
+            ServiceItem service = serviceRepository.findByIdAndPetshopId(itemId, petshopId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado."));
+            name = service.getName();
+            itemDuration = service.getDurationMinutes();
+            itemPrice = CatalogPricing.priceForSize(service, sizeTier(pet));
+        } else {
+            Combo combo = comboRepository.findByIdAndPetshopId(itemId, petshopId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Combo não encontrado."));
+            name = combo.getName();
+            itemDuration = combo.getDurationMinutes();
+            itemPrice = CatalogPricing.priceForSize(combo, sizeTier(pet));
+        }
+
+        appointment.setItemType(type);
+        appointment.setItemId(itemId);
+        appointment.setService(name);
+        appointment.setDurationMinutes(request.durationMinutes() != null ? request.durationMinutes() : itemDuration);
+        appointment.setPrice(request.price() != null ? request.price() : itemPrice);
+    }
+
+    private static SizeTier sizeTier(Pet pet) {
+        return pet != null ? pet.getSize() : null;
+    }
+
+    private static CatalogItemType parseItemType(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return CatalogItemType.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Tipo de item inválido. Use SERVICE ou COMBO.");
+        }
     }
 
     private AppointmentStatus parseStatus(String status) {
@@ -183,6 +260,8 @@ public class AppointmentService {
                 pet != null ? pet.getName() : null,
                 pet != null ? pet.getBreed() : null,
                 pet != null && pet.getSize() != null ? pet.getSize().name() : null,
+                appointment.getItemType() != null ? appointment.getItemType().name() : null,
+                appointment.getItemId(),
                 appointment.getService(),
                 appointment.getScheduledAt(),
                 endTime,
