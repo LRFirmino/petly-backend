@@ -1,0 +1,14 @@
+target/
+*.class
+*.jar
+!.mvn/wrapper/*.jar
+.idea/
+*.iml
+*.log
+
+# Segredos / configuração local
+.env
+
+# Banco SQLite local (perfil dev)
+petly-dev.db
+petly-dev.db-*

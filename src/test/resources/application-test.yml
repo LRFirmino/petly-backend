@@ -1,0 +1,21 @@
+# Perfil de teste: SQLite em memória (mesmo dialeto/migrations do Turso).
+# NÃO toca o banco remoto.
+spring:
+  datasource:
+    url: jdbc:sqlite:file:petlytest?mode=memory&cache=shared
+    driver-class-name: org.sqlite.JDBC
+    username: ""
+    password: ""
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+app:
+  # Conta de plataforma usada apenas nos testes (não é a conta real de produção).
+  platform-admin:
+    email: platform.admin@test.local
+    password: test-password-123

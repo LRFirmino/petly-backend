@@ -1,0 +1,78 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: petshop-backend
+
+  # O arquivo .env é carregado por EnvFileEnvironmentPostProcessor
+  # (tolerante a BOM/aspas). Veja backend/.env.example.
+
+  # ------------------------------------------------------------------
+  datasource:
+    url: ${NEON_DB_URL}
+    username: ${NEON_DB_USERNAME}
+    password: ${NEON_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: false
+    baseline-on-migrate: false
+    locations: classpath:db/migration
+
+app:
+  jwt:
+    # Override with the JWT_SECRET environment variable in production.
+    secret: ${JWT_SECRET:dev-only-secret-change-me-please-0123456789-abcdefghijklmnopqrstuvwxyz}
+    # 24 hours
+    expiration-ms: 86400000
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+
+  # Cadastro público (self-signup) desabilitado: as contas são criadas pelo
+  # administrador da plataforma (console /plataforma -> /api/platform).
+  signup:
+    enabled: false
+
+  # Conta de administrador da plataforma (equipe/devs do SaaS).
+  # Não fica no código: informe por variáveis de ambiente. Se não informado,
+  # nenhum admin de plataforma é criado.
+  platform-admin:
+    email: ${PLATFORM_ADMIN_EMAIL:}
+    password: ${PLATFORM_ADMIN_PASSWORD:}
+
+logging:
+  level:
+    org.springframework.security: INFO
+    org.flywaydb: INFO
+
+---
+# --------------------------------------------------------------------------
+# Perfil de desenvolvimento local: SQLite em arquivo, sem depender do Turso.
+#   java -jar target/petshop-backend-1.0.0.jar --spring.profiles.active=dev
+# --------------------------------------------------------------------------
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:sqlite:./petly-dev.db
+    driver-class-name: org.sqlite.JDBC
+    username: ""
+    password: ""
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+    baseline-on-migrate: true

@@ -1,0 +1,3 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.pawsclaws.petshop.config.EnvFileEnvironmentPostProcessor,\
+com.pawsclaws.petshop.config.DatasourceEnvironmentPostProcessor
