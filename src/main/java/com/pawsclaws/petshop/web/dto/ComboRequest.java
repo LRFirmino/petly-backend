@@ -13,7 +13,11 @@ public record ComboRequest(
         @Size(max = 500)
         String description,
 
-        BigDecimal priceFrom,
+        Integer durationMinutes,
 
-        Integer popularity) {
+        BigDecimal priceSmall,
+
+        BigDecimal priceMedium,
+
+        BigDecimal priceLarge) {
 }

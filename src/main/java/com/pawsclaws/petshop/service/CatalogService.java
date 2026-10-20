@@ -1,8 +1,11 @@
 package com.pawsclaws.petshop.service;
 
+import com.pawsclaws.petshop.domain.AppointmentStatus;
+import com.pawsclaws.petshop.domain.CatalogItemType;
 import com.pawsclaws.petshop.domain.Combo;
 import com.pawsclaws.petshop.domain.ServiceItem;
 import com.pawsclaws.petshop.exception.ResourceNotFoundException;
+import com.pawsclaws.petshop.repository.AppointmentRepository;
 import com.pawsclaws.petshop.repository.ComboRepository;
 import com.pawsclaws.petshop.repository.ServiceItemRepository;
 import com.pawsclaws.petshop.web.dto.ComboDto;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -20,13 +24,16 @@ public class CatalogService {
 
     private final ServiceItemRepository serviceRepository;
     private final ComboRepository comboRepository;
+    private final AppointmentRepository appointmentRepository;
     private final TenantService tenantService;
 
     public CatalogService(ServiceItemRepository serviceRepository,
                           ComboRepository comboRepository,
+                          AppointmentRepository appointmentRepository,
                           TenantService tenantService) {
         this.serviceRepository = serviceRepository;
         this.comboRepository = comboRepository;
+        this.appointmentRepository = appointmentRepository;
         this.tenantService = tenantService;
     }
 
@@ -77,24 +84,29 @@ public class CatalogService {
 
     @Transactional(readOnly = true)
     public List<ComboDto> listCombos() {
-        return comboRepository.findAllByPetshopIdOrderByPopularityDesc(tenantService.currentPetshopId()).stream()
-                .map(CatalogService::toComboDto)
+        Long petshopId = tenantService.currentPetshopId();
+        return comboRepository.findAllByPetshopIdOrderByNameAsc(petshopId).stream()
+                .map(combo -> toComboDto(combo, petshopId))
+                .sorted(Comparator.comparingLong(ComboDto::popularity).reversed()
+                        .thenComparing(ComboDto::name, String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }
 
     @Transactional
     public ComboDto createCombo(ComboRequest request) {
+        Long petshopId = tenantService.currentPetshopId();
         Combo combo = new Combo();
         combo.setPetshop(tenantService.currentPetshopReference());
         applyCombo(combo, request);
-        return toComboDto(comboRepository.save(combo));
+        return toComboDto(comboRepository.save(combo), petshopId);
     }
 
     @Transactional
     public ComboDto updateCombo(Long id, ComboRequest request) {
+        Long petshopId = tenantService.currentPetshopId();
         Combo combo = requireCombo(id);
         applyCombo(combo, request);
-        return toComboDto(comboRepository.save(combo));
+        return toComboDto(comboRepository.save(combo), petshopId);
     }
 
     @Transactional
@@ -110,8 +122,10 @@ public class CatalogService {
     private static void applyCombo(Combo combo, ComboRequest request) {
         combo.setName(request.name().trim());
         combo.setDescription(request.description());
-        combo.setPriceFrom(request.priceFrom());
-        combo.setPopularity(request.popularity());
+        combo.setDurationMinutes(request.durationMinutes());
+        combo.setPriceSmall(request.priceSmall());
+        combo.setPriceMedium(request.priceMedium());
+        combo.setPriceLarge(request.priceLarge());
     }
 
     // ---- Mapeamento ---------------------------------------------------
@@ -125,12 +139,16 @@ public class CatalogService {
                 Arrays.asList(service.getPriceSmall(), service.getPriceMedium(), service.getPriceLarge()));
     }
 
-    static ComboDto toComboDto(Combo combo) {
+    private ComboDto toComboDto(Combo combo, Long petshopId) {
+        long popularity = appointmentRepository.countByPetshopIdAndItemTypeAndItemIdAndStatusNot(
+                petshopId, CatalogItemType.COMBO, combo.getId(), AppointmentStatus.CANCELLED);
         return new ComboDto(
                 combo.getId(),
                 combo.getName(),
                 combo.getDescription(),
-                combo.getPriceFrom(),
-                combo.getPopularity());
+                combo.getDurationMinutes(),
+                Arrays.asList(combo.getPriceSmall(), combo.getPriceMedium(), combo.getPriceLarge()),
+                CatalogPricing.minPrice(combo),
+                popularity);
     }
 }

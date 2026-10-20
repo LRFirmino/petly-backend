@@ -21,7 +21,7 @@ import java.util.Objects;
  */
 @Entity
 @Table(name = "services")
-public class ServiceItem {
+public class ServiceItem implements PricedBySize {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -99,6 +99,7 @@ public class ServiceItem {
         this.durationMinutes = durationMinutes;
     }
 
+    @Override
     public BigDecimal getPriceSmall() {
         return priceSmall;
     }
@@ -107,6 +108,7 @@ public class ServiceItem {
         this.priceSmall = priceSmall;
     }
 
+    @Override
     public BigDecimal getPriceMedium() {
         return priceMedium;
     }
@@ -115,6 +117,7 @@ public class ServiceItem {
         this.priceMedium = priceMedium;
     }
 
+    @Override
     public BigDecimal getPriceLarge() {
         return priceLarge;
     }

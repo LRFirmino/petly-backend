@@ -56,23 +56,3 @@ logging:
     org.flywaydb: INFO
 
 ---
-# --------------------------------------------------------------------------
-# Perfil de desenvolvimento local: SQLite em arquivo, sem depender do Turso.
-#   java -jar target/petshop-backend-1.0.0.jar --spring.profiles.active=dev
-# --------------------------------------------------------------------------
-spring:
-  config:
-    activate:
-      on-profile: dev
-  datasource:
-    url: jdbc:sqlite:./petly-dev.db
-    driver-class-name: org.sqlite.JDBC
-    username: ""
-    password: ""
-  jpa:
-    database-platform: org.hibernate.community.dialect.SQLiteDialect
-    hibernate:
-      ddl-auto: none
-  flyway:
-    enabled: true
-    baseline-on-migrate: true

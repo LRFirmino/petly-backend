@@ -1,6 +1,7 @@
 package com.pawsclaws.petshop.service;
 
 import com.pawsclaws.petshop.domain.Appointment;
+import com.pawsclaws.petshop.domain.CatalogItemType;
 import com.pawsclaws.petshop.repository.AppointmentRepository;
 import com.pawsclaws.petshop.web.dto.ReportsSummary;
 import org.springframework.stereotype.Service;
@@ -80,21 +81,14 @@ public class ReportsService {
         }
 
         Map<String, BigDecimal> byService = new LinkedHashMap<>();
+        Map<String, BigDecimal> byCombo = new LinkedHashMap<>();
         for (Appointment appointment : all) {
             if (inMonth(appointment, current)) {
-                byService.merge(appointment.getService(), money(appointment), BigDecimal::add);
+                Map<String, BigDecimal> target =
+                        appointment.getItemType() == CatalogItemType.COMBO ? byCombo : byService;
+                target.merge(appointment.getService(), money(appointment), BigDecimal::add);
             }
         }
-        BigDecimal serviceTotal = byService.values().stream().reduce(ZERO, BigDecimal::add);
-        List<ReportsSummary.ServiceShare> services = byService.entrySet().stream()
-                .sorted(Map.Entry.<String, BigDecimal>comparingByValue(Comparator.reverseOrder()))
-                .map(entry -> new ReportsSummary.ServiceShare(
-                        entry.getKey(),
-                        entry.getValue().setScale(2, RoundingMode.HALF_UP),
-                        serviceTotal.signum() == 0 ? 0
-                                : entry.getValue().multiply(BigDecimal.valueOf(100))
-                                        .divide(serviceTotal, 0, RoundingMode.HALF_UP).intValue()))
-                .toList();
 
         return new ReportsSummary(
                 MONTHS_LONG[current.getMonthValue() - 1] + " de " + current.getYear(),
@@ -105,7 +99,21 @@ public class ReportsService {
                 appointments,
                 returnRate,
                 monthly,
-                services);
+                shares(byService),
+                shares(byCombo));
+    }
+
+    private static List<ReportsSummary.ServiceShare> shares(Map<String, BigDecimal> byName) {
+        BigDecimal total = byName.values().stream().reduce(ZERO, BigDecimal::add);
+        return byName.entrySet().stream()
+                .sorted(Map.Entry.<String, BigDecimal>comparingByValue(Comparator.reverseOrder()))
+                .map(entry -> new ReportsSummary.ServiceShare(
+                        entry.getKey(),
+                        entry.getValue().setScale(2, RoundingMode.HALF_UP),
+                        total.signum() == 0 ? 0
+                                : entry.getValue().multiply(BigDecimal.valueOf(100))
+                                        .divide(total, 0, RoundingMode.HALF_UP).intValue()))
+                .toList();
     }
 
     private BigDecimal sumInMonth(List<Appointment> appointments, YearMonth month) {

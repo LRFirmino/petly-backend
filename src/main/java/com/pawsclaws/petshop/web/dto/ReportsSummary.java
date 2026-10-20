@@ -12,7 +12,8 @@ public record ReportsSummary(
         long appointments,
         double returnRate,
         List<MonthlyRevenue> monthly,
-        List<ServiceShare> services) {
+        List<ServiceShare> services,
+        List<ServiceShare> combos) {
 
     public record MonthlyRevenue(String month, BigDecimal revenue) {
     }

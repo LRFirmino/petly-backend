@@ -8,7 +8,4 @@ target/
 
 # Segredos / configuração local
 .env
-
-# Banco SQLite local (perfil dev)
-petly-dev.db
-petly-dev.db-*
+read_me_dev
