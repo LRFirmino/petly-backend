@@ -107,7 +107,12 @@ public class UserAdminService {
             return Role.STAFF;
         }
         try {
-            return Role.valueOf(role.trim().toUpperCase(Locale.ROOT));
+            Role parsedRole = Role.valueOf(role.trim().toUpperCase(Locale.ROOT));
+
+            if (parsedRole != Role.ADMIN && parsedRole != Role.STAFF){
+                throw new IllegalArgumentException();
+            }
+            return parsedRole;
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("Perfil inválido. Use ADMIN ou STAFF.");
         }
